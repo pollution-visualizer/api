@@ -1,0 +1,13 @@
+{
+    "comment": "",
+    "ignore": "test",
+    "package": [
+        {
+            "path": "github.com/PuerkitoBio/goquery"
+        },
+        {
+            "path": "github.com/gorilla/mux"
+        }
+    ],
+    "rootPath": "github.com/pollution-visualizer/api"
+}
