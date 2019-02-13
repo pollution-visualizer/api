@@ -1,13 +1,15 @@
 {
-    "comment": "",
-    "ignore": "test",
-    "package": [
-        {
-            "path": "github.com/PuerkitoBio/goquery"
-        },
-        {
-            "path": "github.com/gorilla/mux"
-        }
-    ],
-    "rootPath": "github.com/pollution-visualizer/api"
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/PuerkitoBio/goquery",
+			"revision": ""
+		},
+		{
+			"path": "github.com/gorilla/mux",
+			"revision": ""
+		}
+	],
+	"rootPath": "pollution-visualizer/api"
 }
