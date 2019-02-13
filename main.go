@@ -70,7 +70,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	csvFile, err := os.Open("waste.csv")
+	csvFile, err := os.Open("data/waste.csv")
 	if err != nil {
 		fmt.Println(err)
 	}
