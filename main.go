@@ -70,6 +70,12 @@ func getData(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	csvFile, err := os.Open("data/waste.csv")
 	if err != nil {
 		fmt.Println(err)
@@ -115,7 +121,7 @@ func main() {
 	mxRouter := mux.NewRouter()
 	mxRouter.HandleFunc("/", getData).Methods("GET")
 	http.Handle("/", mxRouter)
-	e := http.ListenAndServe("localhost"+":"+"3000", nil)
+	e := http.ListenAndServe("localhost"+":"+port, nil)
 	if e != nil {
 		log.Fatal("error en el servidor : ", e)
 		return
