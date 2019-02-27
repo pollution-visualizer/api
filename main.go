@@ -13,15 +13,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/mux"
+	"github.com/pollution-visualizer/api/models"
 )
-
-type Data struct {
-	Country   string
-	Year      int
-	Waste     int
-	Latitude  string
-	Longitude string
-}
 
 func getLongitud(country string) (string, string) {
 	var latitude string
@@ -92,8 +85,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	var data Data
-	var datas []Data
+	var data models.Data
+	var datas []models.Data
 
 	for _, each := range csvData {
 		data.Country = each[0]
