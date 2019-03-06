@@ -14,6 +14,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/mux"
 	"github.com/pollution-visualizer/api/models"
+	"github.com/rs/cors"
 )
 
 func getLongitud(country string) (string, string) {
@@ -115,7 +116,8 @@ func main() {
 	mxRouter := mux.NewRouter()
 	mxRouter.HandleFunc("/", getData).Methods("GET")
 	http.Handle("/", mxRouter)
-	e := http.ListenAndServe(":"+port, nil)
+	handler := cors.Default().Handler(mx)
+	e := http.ListenAndServe(":"+port, handler)
 	if e != nil {
 		log.Fatal("error en el servidor : ", e)
 		return
