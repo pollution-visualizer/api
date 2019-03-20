@@ -21,6 +21,12 @@
 			"revisionTime": "2019-02-17T15:38:49Z"
 		},
 		{
+			"checksumSHA1": "hev23KrSfQ4KfosxH+gJKziFVtA=",
+			"path": "github.com/rs/cors",
+			"revision": "76f58f330d76a55c5badc74f6212e8a15e742c77",
+			"revisionTime": "2019-01-16T17:59:10Z"
+		},
+		{
 			"checksumSHA1": "qyU58wqixJNIOwqz2CXE2eMBNTk=",
 			"path": "golang.org/x/net/html",
 			"revision": "66a96c8a540e84140eaf74e38bb3a0a2ff5e5c53",
