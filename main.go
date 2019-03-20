@@ -116,7 +116,7 @@ func main() {
 	mxRouter := mux.NewRouter()
 	mxRouter.HandleFunc("/", getData).Methods("GET")
 	http.Handle("/", mxRouter)
-	handler := cors.Default().Handler(mx)
+	handler := cors.Default().Handler(mxRouter)
 	e := http.ListenAndServe(":"+port, handler)
 	if e != nil {
 		log.Fatal("error en el servidor : ", e)
