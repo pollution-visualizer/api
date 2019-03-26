@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/mux"
@@ -80,37 +81,83 @@ func processCSV(name string, fileName string, dataList *models.DataList) {
 		os.Exit(1)
 	}
 
-	var data models.Data
 	var datas []models.Data
+	var wg sync.WaitGroup
+	var mutex = &sync.Mutex{}
+	var numberOfGoroutines = len(csvData)
+	var dataPerGoroutine = len(csvData) / numberOfGoroutines
 
 	max := 0.0
 	min := 59079741.0
 
-	for _, each := range csvData {
-		data, _ := strconv.ParseFloat(each[3], 64)
-		if data > max {
-			max = data
-		}
+	for i := 0; i < numberOfGoroutines; i++ {
+		wg.Add(1)
+		go func(i int, dataPerGoroutine int) {
+			defer wg.Done()
+			for j := (dataPerGoroutine * (i)); j < ((dataPerGoroutine * (i)) + dataPerGoroutine); j++ {
+				data, _ := strconv.ParseFloat(csvData[j][3], 64)
+				if data > max {
+					max = data
+				}
 
-		if data < min {
-			min = data
-		}
-	}
-	fmt.Println("Max and min determined")
-
-	for _, each := range csvData {
-		data.Country = each[0]
-		data.Year, _ = strconv.Atoi(each[2])
-		x, _ := strconv.ParseFloat(each[3], 64)
-		data.Norm = ((x - min) / (max - min))
-		data.Waste = x
-		data.Latitude, data.Longitude = getLongitud(string(each[0]))
-		datas = append(datas, data)
+				if data < min {
+					min = data
+				}
+			}
+		}(i, dataPerGoroutine)
 	}
 
-	// Convert to JSON
+	wg.Wait()
+
+	for i := 0; i < numberOfGoroutines; i++ {
+		wg.Add(1)
+		go func(i int, dataPerGoroutine int) {
+			defer wg.Done()
+			for j := (dataPerGoroutine * (i)); j < ((dataPerGoroutine * (i)) + dataPerGoroutine); j++ {
+				var data models.Data
+				data.Country = csvData[j][0]
+				data.Year, _ = strconv.Atoi(csvData[j][2])
+				x, _ := strconv.ParseFloat(csvData[j][3], 64)
+				data.Norm = ((x - min) / (max - min))
+				data.Waste = x
+				data.Latitude, data.Longitude = getLongitud(string(csvData[j][0]))
+				mutex.Lock()
+				datas = append(datas, data)
+				mutex.Unlock()
+			}
+		}(i, dataPerGoroutine)
+	}
+
+	wg.Wait()
+
 	dataList.Name = name
 	dataList.DataSet = datas
+
+	// for _, each := range csvData {
+	// 	data, _ := strconv.ParseFloat(each[3], 64)
+	// 	if data > max {
+	// 		max = data
+	// 	}
+
+	// 	if data < min {
+	// 		min = data
+	// 	}
+	// }
+	// fmt.Println("Max and min determined")
+
+	// for _, each := range csvData {
+	// 	data.Country = each[0]
+	// 	data.Year, _ = strconv.Atoi(each[2])
+	// 	x, _ := strconv.ParseFloat(each[3], 64)
+	// 	data.Norm = ((x - min) / (max - min))
+	// 	data.Waste = x
+	// 	data.Latitude, data.Longitude = getLongitud(string(each[0]))
+	// 	datas = append(datas, data)
+	// }
+
+	// Convert to JSON
+	// dataList.Name = name
+	// dataList.DataSet = datas
 }
 
 func main() {
