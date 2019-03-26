@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -89,10 +90,30 @@ func main() {
 	var data models.Data
 	var datas []models.Data
 
+	mean := 0.0
+	counter := 0.0
+
+	for _, each := range csvData {
+		data, _ := strconv.ParseFloat(each[3], 64)
+		mean += data
+		counter += 1
+	}
+
+	mean = mean / counter
+	upper := 0.0
+
+	for _, each := range csvData {
+		data, _ := strconv.ParseFloat(each[3], 64)
+		upper += math.Pow((data - mean), 2.0)
+	}
+
+	standardDeviation := math.Sqrt(upper / counter)
+
 	for _, each := range csvData {
 		data.Country = each[0]
 		data.Year, _ = strconv.Atoi(each[2])
-		data.Waste, _ = strconv.Atoi(each[3])
+		x, _ := strconv.ParseFloat(each[3], 64)
+		data.Waste = ((x - mean) / standardDeviation) + 1
 		data.Latitude, data.Longitude = getLongitud(string(each[0]))
 		datas = append(datas, data)
 	}
