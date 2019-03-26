@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pollution-visualizer/api/models"
 	"github.com/rs/cors"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func getLongitud(country string) (string, string) {
@@ -64,6 +67,22 @@ func getData(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(""))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Check the connection
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
 	port := os.Getenv("PORT")
 
 	fmt.Println(port)
