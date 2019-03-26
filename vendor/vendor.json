@@ -27,6 +27,12 @@
 			"revisionTime": "2019-01-16T17:59:10Z"
 		},
 		{
+			"checksumSHA1": "nDmN0zmjisiOOyJYnL1OGfePXD0=",
+			"path": "go.mongodb.org/mongo-driver/mongo",
+			"revision": "385f1a6b3cc78375b5d3d229bc917fad3b2e1992",
+			"revisionTime": "2019-03-18T22:14:54Z"
+		},
+		{
 			"checksumSHA1": "qyU58wqixJNIOwqz2CXE2eMBNTk=",
 			"path": "golang.org/x/net/html",
 			"revision": "66a96c8a540e84140eaf74e38bb3a0a2ff5e5c53",
