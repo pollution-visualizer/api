@@ -18,13 +18,9 @@ import (
 	"github.com/rs/cors"
 )
 
-func getLongitud(country string) (string, string) {
+func getLongitud(country string, doc *goquery.Document) (string, string) {
 	var latitude string
 	var longitude string
-	doc, err := goquery.NewDocument("https://lab.lmnixon.org/4th/worldcapitals.html")
-	if err != nil {
-		log.Fatal(err)
-	}
 	doc.Find("table tr").Each(func(_ int, tr *goquery.Selection) {
 		//var pais
 		copy := 0
@@ -64,7 +60,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func processCSV(name string, fileName string, dataList *models.DataList) {
+func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.WaitGroup) []models.Data {
 	csvFile, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println(err)
@@ -82,7 +78,6 @@ func processCSV(name string, fileName string, dataList *models.DataList) {
 	}
 
 	var datas []models.Data
-	var wg sync.WaitGroup
 	var mutex = &sync.Mutex{}
 	var numberOfGoroutines = len(csvData)
 	var dataPerGoroutine = len(csvData) / numberOfGoroutines
@@ -120,7 +115,7 @@ func processCSV(name string, fileName string, dataList *models.DataList) {
 				x, _ := strconv.ParseFloat(csvData[j][3], 64)
 				data.Norm = ((x - min) / (max - min))
 				data.Waste = x
-				data.Latitude, data.Longitude = getLongitud(string(csvData[j][0]))
+				data.Latitude, data.Longitude = getLongitud(string(csvData[j][0]), doc)
 				mutex.Lock()
 				datas = append(datas, data)
 				mutex.Unlock()
@@ -130,8 +125,7 @@ func processCSV(name string, fileName string, dataList *models.DataList) {
 
 	wg.Wait()
 
-	dataList.Name = name
-	dataList.DataSet = datas
+	return datas
 
 	// for _, each := range csvData {
 	// 	data, _ := strconv.ParseFloat(each[3], 64)
@@ -168,14 +162,32 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	var dataList models.DataList
+	doc, err := goquery.NewDocument("https://lab.lmnixon.org/4th/worldcapitals.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var dataList []models.DataList
+	var wg sync.WaitGroup
 
 	fmt.Println("Initiating Waste csv analysis")
-	processCSV("waste", "data/waste.csv", &dataList)
+	waste := processCSV("waste", "data/waste.csv", doc, &wg)
 	fmt.Println("Waste csv analysis finished")
 	fmt.Println("Initiating Water csv analysis")
-	processCSV("water", "data/water.csv", &dataList)
+	water := processCSV("water", "data/water.csv", doc, &wg)
 	fmt.Println("Water csv analysis finished")
+
+	var dataListValue models.DataList
+
+	dataListValue.Name = "Waste"
+	dataListValue.DataSet = waste
+
+	dataList = append(dataList, dataListValue)
+
+	dataListValue.Name = "Water"
+	dataListValue.DataSet = water
+
+	dataList = append(dataList, dataListValue)
 
 	jsonData, err := json.Marshal(dataList)
 	if err != nil {
