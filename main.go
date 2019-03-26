@@ -107,7 +107,8 @@ func main() {
 		data.Country = each[0]
 		data.Year, _ = strconv.Atoi(each[2])
 		x, _ := strconv.ParseFloat(each[3], 64)
-		data.Waste = ((x - min) / (max - min))
+		data.Norm = ((x - min) / (max - min))
+		data.Waste, _ = strconv.Atoi(each[3])
 		data.Latitude, data.Longitude = getLongitud(string(each[0]))
 		datas = append(datas, data)
 	}
