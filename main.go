@@ -63,19 +63,13 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func main() {
-	port := os.Getenv("PORT")
-
-	fmt.Println(port)
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
-
-	csvFile, err := os.Open("data/waste.csv")
+func processCSV(name string, fileName string, dataList *models.DataList) {
+	csvFile, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer csvFile.Close()
+	fmt.Println("CSV read")
 
 	reader := csv.NewReader(csvFile)
 	reader.FieldsPerRecord = -1
@@ -102,19 +96,41 @@ func main() {
 			min = data
 		}
 	}
+	fmt.Println("Max and min determined")
 
 	for _, each := range csvData {
 		data.Country = each[0]
 		data.Year, _ = strconv.Atoi(each[2])
 		x, _ := strconv.ParseFloat(each[3], 64)
 		data.Norm = ((x - min) / (max - min))
-		data.Waste, _ = strconv.Atoi(each[3])
+		data.Waste = x
 		data.Latitude, data.Longitude = getLongitud(string(each[0]))
 		datas = append(datas, data)
 	}
 
 	// Convert to JSON
-	jsonData, err := json.Marshal(datas)
+	dataList.Name = name
+	dataList.DataSet = datas
+}
+
+func main() {
+	port := os.Getenv("PORT")
+
+	fmt.Println(port)
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
+	var dataList models.DataList
+
+	fmt.Println("Initiating Waste csv analysis")
+	processCSV("waste", "data/waste.csv", &dataList)
+	fmt.Println("Waste csv analysis finished")
+	fmt.Println("Initiating Water csv analysis")
+	processCSV("water", "data/water.csv", &dataList)
+	fmt.Println("Water csv analysis finished")
+
+	jsonData, err := json.Marshal(dataList)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
