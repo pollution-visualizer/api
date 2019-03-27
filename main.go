@@ -1,22 +1,28 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gorilla/mux"
 	"github.com/pollution-visualizer/api/models"
 	"github.com/rs/cors"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var client *mongo.Client
 
 func getLongitud(country string, doc *goquery.Document) (string, string) {
 	var latitude string
@@ -52,18 +58,66 @@ func getLongitud(country string, doc *goquery.Document) (string, string) {
 
 }
 
+func getAllDocsFromCollections(name string) models.DataList {
+	collection := client.Database("pollution-visualizer").Collection(name)
+
+	cur, err := collection.Find(context.Background(), bson.D{{}})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	var dataList models.DataList
+	defer cur.Close(context.Background())
+	for cur.Next(context.Background()) {
+		elem := &bson.D{}
+		if err = cur.Decode(elem); err != nil {
+			log.Fatal(err)
+		}
+		m := elem.Map()
+		data := models.Data{
+			Country:   m["country"].(string),
+			Year:      m["year"].(int32),
+			Waste:     m["waste"].(float64),
+			Norm:      m["norm"].(float64),
+			Latitude:  m["latitude"].(string),
+			Longitude: m["longitude"].(string),
+		}
+		dataList.DataSet = append(dataList.DataSet, data)
+	}
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	dataList.Name = name
+	return dataList
+}
+
 func getData(w http.ResponseWriter, r *http.Request) {
-	toReturn, _ := ioutil.ReadFile("data.json")
+	//toReturn, _ := ioutil.ReadFile("data.json")
+
+	waste := getAllDocsFromCollections("waste")
+	water := getAllDocsFromCollections("water")
+
+	var dataList []models.DataList
+
+	dataList = append(dataList, waste)
+
+	dataList = append(dataList, water)
+
+	jsonData, err := json.Marshal(dataList)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(toReturn)
+	w.Write(jsonData)
 	return
 }
 
-func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.WaitGroup) []models.Data {
+func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.WaitGroup) {
 	csvFile, err := os.Open(fileName)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	defer csvFile.Close()
 	fmt.Println("CSV read")
@@ -73,11 +127,10 @@ func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.Wa
 
 	csvData, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
-	var datas []models.Data
+	var datas []interface{}
 	var mutex = &sync.Mutex{}
 	var numberOfGoroutines = len(csvData)
 	var dataPerGoroutine = len(csvData) / numberOfGoroutines
@@ -111,7 +164,12 @@ func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.Wa
 			for j := (dataPerGoroutine * (i)); j < ((dataPerGoroutine * (i)) + dataPerGoroutine); j++ {
 				var data models.Data
 				data.Country = csvData[j][0]
-				data.Year, _ = strconv.Atoi(csvData[j][2])
+				temp, err := strconv.ParseInt(csvData[j][2], 10, 32)
+				if err != nil {
+					panic(err)
+				}
+				year := int32(temp)
+				data.Year = year
 				x, _ := strconv.ParseFloat(csvData[j][3], 64)
 				data.Norm = ((x - min) / (max - min))
 				data.Waste = x
@@ -124,34 +182,13 @@ func processCSV(name string, fileName string, doc *goquery.Document, wg *sync.Wa
 	}
 
 	wg.Wait()
-
-	return datas
-
-	// for _, each := range csvData {
-	// 	data, _ := strconv.ParseFloat(each[3], 64)
-	// 	if data > max {
-	// 		max = data
-	// 	}
-
-	// 	if data < min {
-	// 		min = data
-	// 	}
-	// }
-	// fmt.Println("Max and min determined")
-
-	// for _, each := range csvData {
-	// 	data.Country = each[0]
-	// 	data.Year, _ = strconv.Atoi(each[2])
-	// 	x, _ := strconv.ParseFloat(each[3], 64)
-	// 	data.Norm = ((x - min) / (max - min))
-	// 	data.Waste = x
-	// 	data.Latitude, data.Longitude = getLongitud(string(each[0]))
-	// 	datas = append(datas, data)
-	// }
-
-	// Convert to JSON
-	// dataList.Name = name
-	// dataList.DataSet = datas
+	collection := client.Database("pollution-visualizer").Collection(name)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	_, err = collection.InsertMany(ctx, datas)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
 }
 
 func main() {
@@ -166,43 +203,32 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	user := os.Getenv("DATABASE_USER")
+	password := os.Getenv("DATABASE_PASSWORD")
+	connectionString := fmt.Sprintf("mongodb://%s:%s@ds117816.mlab.com:17816/pollution-visualizer", user, password)
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(connectionString))
 
-	var dataList []models.DataList
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Check the connection
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
 	var wg sync.WaitGroup
 
 	fmt.Println("Initiating Waste csv analysis")
-	waste := processCSV("waste", "data/waste.csv", doc, &wg)
+	processCSV("waste", "data/waste.csv", doc, &wg)
 	fmt.Println("Waste csv analysis finished")
 	fmt.Println("Initiating Water csv analysis")
-	water := processCSV("water", "data/water.csv", doc, &wg)
+	processCSV("water", "data/water.csv", doc, &wg)
 	fmt.Println("Water csv analysis finished")
-
-	var dataListValue models.DataList
-
-	dataListValue.Name = "Waste"
-	dataListValue.DataSet = waste
-
-	dataList = append(dataList, dataListValue)
-
-	dataListValue.Name = "Water"
-	dataListValue.DataSet = water
-
-	dataList = append(dataList, dataListValue)
-
-	jsonData, err := json.Marshal(dataList)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	jsonFile, err := os.Create("./data.json")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-
-	jsonFile.Write(jsonData)
-	jsonFile.Close()
 
 	mxRouter := mux.NewRouter()
 	mxRouter.HandleFunc("/", getData).Methods("GET")
