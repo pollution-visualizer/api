@@ -15,6 +15,18 @@
 			"revisionTime": "2018-10-12T15:44:24Z"
 		},
 		{
+			"checksumSHA1": "H8wo+NR5z+VRl0wqPYpVQfC06ks=",
+			"path": "github.com/go-stack/stack",
+			"revision": "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a",
+			"revisionTime": "2018-08-26T13:48:48Z"
+		},
+		{
+			"checksumSHA1": "L3HoHVqp2EaBSOqBxB7l0PTyu7g=",
+			"path": "github.com/golang/snappy",
+			"revision": "2a8bb927dd31d8daada140a5d09578521ce5c36a",
+			"revisionTime": "2019-02-18T23:22:22Z"
+		},
+		{
 			"checksumSHA1": "9YQYg2PkA7lkFuUyCQGUv0vX5zA=",
 			"path": "github.com/gorilla/mux",
 			"revision": "8559a4f775fc329165fe32bd4c2543de8ada8fce",
@@ -25,6 +37,18 @@
 			"path": "github.com/rs/cors",
 			"revision": "76f58f330d76a55c5badc74f6212e8a15e742c77",
 			"revisionTime": "2019-01-16T17:59:10Z"
+		},
+		{
+			"checksumSHA1": "uE78U34xjlJ815TX/bhLROkjmeI=",
+			"path": "github.com/xdg/scram",
+			"revision": "7eeb5667e42c09cb51bf7b7c28aea8c56767da90",
+			"revisionTime": "2018-08-14T20:50:39Z"
+		},
+		{
+			"checksumSHA1": "lBUiRseyka10o3r/oaQMNlL7sQE=",
+			"path": "github.com/xdg/stringprep",
+			"revision": "73f8eece6fdcd902c185bf651de50f3828bed5ed",
+			"revisionTime": "2018-07-14T16:05:09Z"
 		},
 		{
 			"checksumSHA1": "bimceh/SOERPuL2+TJJs0bbllQw=",
@@ -217,6 +241,12 @@
 			"path": "golang.org/x/net/html/atom",
 			"revision": "66a96c8a540e84140eaf74e38bb3a0a2ff5e5c53",
 			"revisionTime": "2019-02-15T16:53:08Z"
+		},
+		{
+			"checksumSHA1": "tI1YsCNEjyDW/aGNtunZDyjN9MA=",
+			"path": "golang.org/x/sync/semaphore",
+			"revision": "e225da77a7e68af35c70ccbf71af2b83e6acac3c",
+			"revisionTime": "2019-02-15T22:36:53Z"
 		}
 	],
 	"rootPath": "github.com/pollution-visualizer/api"
